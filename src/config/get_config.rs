@@ -28,7 +28,7 @@ pub fn get_config() -> GetConfigsResult {
         .map(|p| p.to_path_buf());
     let workspace_config = workspace_path
         .as_ref()
-        .map(|path| fs::read_to_string(path).unwrap())
+        .map(|path| fs::read_to_string(path.join("atcoder.yml")).unwrap())
         .map(|content| serde_yaml::from_str::<WorkspaceConfig>(&content).unwrap());
 
     let global_config_path = global_config::get_config_path();
