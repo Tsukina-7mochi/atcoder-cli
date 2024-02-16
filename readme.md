@@ -47,8 +47,8 @@ $ atcoder info
 ```sh
 # タスクディレクトリの初期化
 # path のデフォルト: <contest>/<task>
-$ atcoder init <contest> <task> <profile> [path]
-$ atcoder init <contest> * <profile> [path]
+$ atcoder init <profile> <contest> <task> [path]
+$ atcoder init <profile> <contest> * [path]
 ```
 
 ### run コマンド

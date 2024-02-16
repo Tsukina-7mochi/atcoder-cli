@@ -12,12 +12,12 @@ pub struct CLI {
 pub enum Commands {
     Info,
     Init {
+        #[arg(value_name = "PROFILE")]
+        profile_name: String,
         #[arg(value_name = "CONTEST")]
         contest_name: String,
         #[arg(value_name = "TASK")]
         task_name: String,
-        #[arg(value_name = "PROFILE")]
-        profile_name: String,
         #[arg(value_name = "DIRECTORY")]
         path: Option<String>,
     },
