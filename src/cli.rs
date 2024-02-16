@@ -21,4 +21,8 @@ pub enum Commands {
         #[arg(value_name = "DIRECTORY")]
         path: Option<String>,
     },
+    Url {
+        #[arg(value_name = "CONTEST")]
+        contest_name: Option<String>,
+    },
 }

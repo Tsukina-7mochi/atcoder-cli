@@ -1,3 +1,4 @@
+mod api;
 mod cli;
 mod commands;
 mod config;
@@ -48,6 +49,10 @@ fn main() -> io::Result<()> {
             .unwrap();
 
             commands::init_task_directory(&path, &profile, &contest_name, &task_name).unwrap();
+        }
+        cli::Commands::Url { contest_name } => {
+            let contest_name = contest_name.or(config.workspace_config.map(|c| c.contest.clone()));
+            commands::show_contest_url(&mut out, &contest_name.unwrap())?;
         }
     }
 
