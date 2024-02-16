@@ -1,3 +1,5 @@
+pub mod defaults;
+
 #[derive(Debug, Clone)]
 pub struct Profile {
     pub name: String,

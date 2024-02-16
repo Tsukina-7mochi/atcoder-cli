@@ -34,4 +34,14 @@ impl PartialProfile {
             init: init.map(|s| s.to_owned()),
         }
     }
+
+    pub fn to_profile(self, name: &str) -> Option<Profile> {
+        Some(Profile {
+            name: name.to_owned(),
+            build: self.build,
+            run: self.run?,
+            test: self.test,
+            init: self.init,
+        })
+    }
 }

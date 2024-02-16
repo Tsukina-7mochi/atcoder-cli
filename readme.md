@@ -45,8 +45,10 @@ $ atcoder info
 `profile.init` を使って初期化
 
 ```sh
-$ atcoder init <contest> <task> <profile>
-$ atcoder init <contest> * <profile>
+# タスクディレクトリの初期化
+# path のデフォルト: <contest>/<task>
+$ atcoder init <contest> <task> <profile> [path]
+$ atcoder init <contest> * <profile> [path]
 ```
 
 ### run コマンド
