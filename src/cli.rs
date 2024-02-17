@@ -17,7 +17,7 @@ pub enum Commands {
         #[arg(value_name = "CONTEST")]
         contest_name: String,
         #[arg(value_name = "TASK")]
-        task_name: String,
+        task_name: Option<String>,
         #[arg(value_name = "DIRECTORY")]
         path: Option<String>,
     },

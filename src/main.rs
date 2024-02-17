@@ -51,7 +51,7 @@ fn main() -> io::Result<()> {
                 path.as_deref(),
                 &profile,
                 &contest_name,
-                &task_name,
+                task_name.as_deref(),
             )
             .unwrap();
         }
