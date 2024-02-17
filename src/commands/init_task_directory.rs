@@ -8,11 +8,18 @@ use crate::config::WorkspaceConfig;
 use crate::profile::Profile;
 
 pub fn init_task_directory(
-    path: &Path,
+    cwd: &Path,
+    path: Option<&Path>,
     profile: &Profile,
     contest_name: &str,
     task_name: &str,
 ) -> io::Result<()> {
+    let path = match path {
+        Some(p) => p.to_path_buf(),
+        None => cwd.join(contest_name).join(task_name),
+    };
+    let path = path.as_path();
+
     if path.exists() {
         if !path.is_dir() {
             panic!("Path {:?} is not directory.", path);
@@ -20,7 +27,8 @@ pub fn init_task_directory(
     } else {
         fs::create_dir_all(path).unwrap();
     }
-    println!("{:?}", path);
+
+    println!("Initializing {:?}", path);
 
     let init_command = (&profile.init.as_ref())
         .unwrap()

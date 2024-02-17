@@ -31,10 +31,6 @@ fn main() -> io::Result<()> {
             path,
         } => {
             let global_config = config.global_config.unwrap();
-            let path = path
-                .map(|p| PathBuf::from(p))
-                .or(config.cwd.clone())
-                .unwrap();
             let profile = {
                 let profile = profile::defaults::get_default(&profile_name);
                 if let Some(gp) = global_config.profiles.get(&profile_name) {
@@ -47,8 +43,17 @@ fn main() -> io::Result<()> {
                 }
             }
             .unwrap();
+            let path = path.map(|s| PathBuf::from(s));
+            let cwd = &config.cwd.unwrap();
 
-            commands::init_task_directory(&path, &profile, &contest_name, &task_name).unwrap();
+            commands::init_task_directory(
+                cwd,
+                path.as_deref(),
+                &profile,
+                &contest_name,
+                &task_name,
+            )
+            .unwrap();
         }
         cli::Commands::Url { contest_name } => {
             let contest_name = contest_name.or(config.workspace_config.map(|c| c.contest.clone()));
