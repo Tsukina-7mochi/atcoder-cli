@@ -29,19 +29,7 @@ fn main() -> io::Result<()> {
             profile_name,
             path,
         } => {
-            let global_config = config.global_config.unwrap();
-            let profile = {
-                let profile = profile::defaults::get_default(&profile_name);
-                if let Some(gp) = global_config.profiles.get(&profile_name) {
-                    match profile {
-                        Some(p) => Some(gp.merge_default(&p)),
-                        None => gp.clone().to_profile(&profile_name),
-                    }
-                } else {
-                    profile
-                }
-            }
-            .unwrap();
+            let profile = config.get_profile(Some(&profile_name)).unwrap();
             let path = path.map(|s| PathBuf::from(s));
             let cwd = &config.cwd.unwrap();
 
@@ -57,6 +45,46 @@ fn main() -> io::Result<()> {
         cli::Commands::Url { contest_name } => {
             let contest_name = contest_name.or(config.workspace_config.map(|c| c.contest.clone()));
             commands::show_contest_url(&mut out, &contest_name.unwrap())?;
+        }
+        cli::Commands::Run { manual } => {
+            let cwd = &config.cwd.as_ref().unwrap();
+            let profile = config.get_profile(None).unwrap();
+
+            if manual {
+                commands::run_test(&cwd, profile.build.as_deref(), &profile.run, None)
+            } else {
+                let workspace_config = config.workspace_config.unwrap();
+                let contest_task_name = (
+                    workspace_config.contest.as_str(),
+                    workspace_config.task.as_str(),
+                );
+                commands::run_test(
+                    &cwd,
+                    profile.build.as_deref(),
+                    &profile.run,
+                    Some(contest_task_name),
+                )
+            }
+        }
+        cli::Commands::Test { manual } => {
+            let cwd = &config.cwd.as_ref().unwrap();
+            let profile = config.get_profile(None).unwrap();
+            let (build_command, run_command) = if let Some(test_command) = profile.test {
+                (None, test_command.clone())
+            } else {
+                (profile.build.as_deref(), profile.run.clone())
+            };
+
+            if manual {
+                commands::run_test(&cwd, build_command, &run_command, None)
+            } else {
+                let workspace_config = config.workspace_config.unwrap();
+                let contest_task_name = (
+                    workspace_config.contest.as_str(),
+                    workspace_config.task.as_str(),
+                );
+                commands::run_test(&cwd, build_command, &run_command, Some(contest_task_name))
+            }
         }
     }
 

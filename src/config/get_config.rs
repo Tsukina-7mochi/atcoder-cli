@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
+use crate::profile;
 use crate::util;
 
 use super::global_config;
@@ -14,6 +15,29 @@ pub struct GetConfigsResult {
     pub workspace_config: Option<WorkspaceConfig>,
     pub global_config_path: Option<PathBuf>,
     pub global_config: Option<GlobalConfig>,
+}
+
+impl GetConfigsResult {
+    pub fn get_profile(&self, profile_name: Option<&str>) -> Option<profile::Profile> {
+        let profile_name = profile_name.or(self
+            .workspace_config
+            .as_ref()
+            .map(|config| config.profile.as_str()))?;
+        let profile = profile::defaults::get_default(&profile_name);
+
+        if let Some(gp) = self
+            .global_config
+            .as_ref()
+            .and_then(|config| config.profiles.get(profile_name))
+        {
+            match profile {
+                Some(p) => Some(gp.merge_default(&p)),
+                None => gp.clone().to_profile(&profile_name),
+            }
+        } else {
+            profile
+        }
+    }
 }
 
 pub fn get_config() -> GetConfigsResult {

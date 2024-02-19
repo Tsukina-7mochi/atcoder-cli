@@ -25,4 +25,12 @@ pub enum Commands {
         #[arg(value_name = "CONTEST")]
         contest_name: Option<String>,
     },
+    Run {
+        #[arg(long)]
+        manual: bool,
+    },
+    Test {
+        #[arg(long)]
+        manual: bool,
+    },
 }
