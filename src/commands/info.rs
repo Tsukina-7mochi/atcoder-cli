@@ -4,7 +4,6 @@ use std::path::Path;
 use crate::config::WorkspaceConfig;
 
 pub fn info(
-    out: &mut impl io::Write,
     global_config_path: Option<&Path>,
     workspace_config_path: Option<&Path>,
     workspace_path: Option<&Path>,
@@ -12,32 +11,32 @@ pub fn info(
 ) -> io::Result<()> {
     if let Some(path) = global_config_path {
         let path = path.to_string_lossy();
-        writeln!(out, "Global configuration file: {}", path)?;
+        println!("Global configuration file: {}", path);
     } else {
-        writeln!(out, "Global configuration file: None")?;
+        println!("Global configuration file: None");
     }
 
     if let Some(path) = workspace_config_path {
         let path = path.to_string_lossy();
-        writeln!(out, "Task configuration file: {}", path)?;
+        println!("Task configuration file: {}", path);
     } else {
-        writeln!(out, "Task configuration file: None")?;
+        println!("Task configuration file: None");
     }
 
     if let Some(path) = workspace_path {
         let path = path.to_string_lossy();
-        writeln!(out, "Task directory: {}", path)?;
+        println!("Task directory: {}", path);
     } else {
-        writeln!(out, "Task directory: None")?;
+        println!("Task directory: None");
     }
 
     if let Some(config) = workspace_config {
-        writeln!(out, "Task configuration:")?;
-        writeln!(out, "  contest: {}", config.contest)?;
-        writeln!(out, "  task   : {}", config.task)?;
-        writeln!(out, "  profile: {}", config.profile)?;
+        println!("Task configuration:");
+        println!("  contest: {}", config.contest);
+        println!("  task   : {}", config.task);
+        println!("  profile: {}", config.profile);
     } else {
-        writeln!(out, "Task configuration: None")?;
+        println!("Task configuration: None");
     }
 
     Ok(())

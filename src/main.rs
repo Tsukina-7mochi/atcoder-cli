@@ -18,7 +18,6 @@ fn main() -> io::Result<()> {
 
     match cli.command {
         cli::Commands::Info => commands::info(
-            &mut out,
             config.global_config_path.as_deref(),
             config.workspace_config_path.as_deref(),
             config.workspace_path.as_deref(),
