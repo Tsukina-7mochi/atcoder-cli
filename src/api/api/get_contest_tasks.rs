@@ -3,7 +3,7 @@ use scraper::Html;
 use crate::util::scraper_element_text_content::TextContent;
 
 use super::super::url;
-use super::HTTP_CLIENT;
+use super::client;
 
 mod selectors {
     use once_cell::sync::Lazy;
@@ -22,7 +22,7 @@ pub struct Task {
 
 pub fn get_contest_tasks(contest_name: &str) -> Vec<Task> {
     let url = url::contest_tasks(contest_name);
-    let res = HTTP_CLIENT.get(url).send().unwrap();
+    let res = client::new_client().unwrap().get(url).send().unwrap();
     let body = res.text().unwrap();
     let document = Html::parse_document(&body);
 
