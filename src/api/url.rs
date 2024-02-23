@@ -2,6 +2,10 @@ pub fn atcoder() -> String {
     "https://atcoder.jp".to_owned()
 }
 
+pub fn login() -> String {
+    atcoder() + "/login"
+}
+
 pub fn contests() -> String {
     atcoder() + "/contests"
 }

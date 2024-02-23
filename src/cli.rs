@@ -33,4 +33,5 @@ pub enum Commands {
         #[arg(long)]
         manual: bool,
     },
+    Login,
 }

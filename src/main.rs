@@ -86,6 +86,7 @@ fn main() -> io::Result<()> {
                 commands::run_test(&cwd, build_command, &run_command, Some(contest_task_name))
             }
         }
+        cli::Commands::Login => commands::login(),
     }
 
     Ok(())
