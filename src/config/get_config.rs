@@ -15,6 +15,7 @@ pub struct GetConfigsResult {
     pub workspace_config: Option<WorkspaceConfig>,
     pub global_config_path: Option<PathBuf>,
     pub global_config: Option<GlobalConfig>,
+    pub session_cookie: Option<String>,
 }
 
 impl GetConfigsResult {
@@ -60,6 +61,7 @@ pub fn get_config() -> GetConfigsResult {
         .as_ref()
         .map(|path| fs::read_to_string(path).unwrap())
         .map(|content| serde_yaml::from_str::<GlobalConfig>(&content).unwrap());
+    let session_cookie = env::var("ATCODER_SESSION").ok();
 
     return GetConfigsResult {
         cwd,
@@ -68,5 +70,6 @@ pub fn get_config() -> GetConfigsResult {
         workspace_config,
         global_config_path,
         global_config,
+        session_cookie,
     };
 }

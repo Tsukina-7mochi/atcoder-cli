@@ -102,8 +102,18 @@ fn main() -> io::Result<()> {
                 .as_ref()
                 .map(|c| c.task.as_ref())
                 .expect("contest name not provided");
+            let session_cookie = config
+                .session_cookie
+                .as_ref()
+                .expect("session cookie not provided.");
 
-            commands::submit(&workspace_path, &profile, contest_name, task_name)
+            commands::submit(
+                &workspace_path,
+                &profile,
+                contest_name,
+                task_name,
+                session_cookie,
+            )
         }
     }
 
