@@ -87,6 +87,25 @@ fn main() -> io::Result<()> {
             }
         }
         cli::Commands::Login => commands::login(),
+        cli::Commands::Submit => {
+            let workspace_path = config
+                .workspace_path
+                .as_ref()
+                .expect("workspace path not provided");
+            let profile = config.get_profile(None).expect("profile not provided");
+            let contest_name = config
+                .workspace_config
+                .as_ref()
+                .map(|c| c.contest.as_ref())
+                .expect("contest name not provided");
+            let task_name = config
+                .workspace_config
+                .as_ref()
+                .map(|c| c.task.as_ref())
+                .expect("contest name not provided");
+
+            commands::submit(&workspace_path, &profile, contest_name, task_name)
+        }
     }
 
     Ok(())

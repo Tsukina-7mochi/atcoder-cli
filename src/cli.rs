@@ -34,4 +34,5 @@ pub enum Commands {
         manual: bool,
     },
     Login,
+    Submit,
 }

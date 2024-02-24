@@ -22,6 +22,6 @@ pub fn contest_task(contest_name: &str, task_name: &str) -> String {
     contest_tasks(contest_name) + "/" + task_name
 }
 
-pub fn contest_submissions(contest_name: &str) -> String {
-    contest(contest_name) + "/"
+pub fn contest_submit(contest_name: &str) -> String {
+    contest(contest_name) + "/submit"
 }
