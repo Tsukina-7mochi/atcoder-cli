@@ -1,19 +1,11 @@
 use std::{collections::HashMap, time::Duration};
 
 use reqwest::header::HeaderValue;
-use scraper::Html;
 
-use crate::{api::url, util::url_encoding};
+use super::url;
+use crate::util::url_encoding;
 
 const COOKIE_NAME_SESSION: &str = "REVEL_SESSION";
-
-mod selectors {
-    use once_cell::sync::Lazy;
-    use scraper::Selector;
-
-    pub const INPUT_CSRF_TOKEN: Lazy<Selector> =
-        Lazy::new(|| Selector::parse("input[name=csrf_token]").unwrap());
-}
 
 fn get_csrf_token(session_cookie: &str) -> Option<String> {
     for value in session_cookie.split("%00") {
