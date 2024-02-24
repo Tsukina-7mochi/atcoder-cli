@@ -5,8 +5,8 @@ use std::path::Path;
 use subprocess::Exec;
 
 use crate::api;
+use crate::config::Profile;
 use crate::config::WorkspaceConfig;
-use crate::profile::Profile;
 
 pub fn init_task_directory(
     cwd: &Path,

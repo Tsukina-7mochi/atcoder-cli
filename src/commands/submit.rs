@@ -2,7 +2,7 @@ use std::path::Path;
 use std::{env, fs};
 
 use crate::api;
-use crate::profile::Profile;
+use crate::config::Profile;
 
 pub fn submit(workspace_path: &Path, profile: &Profile, contest_name: &str, task_name: &str) {
     let session_cookie = env::var("ATCODER_SESSION").expect("Cannot get session cookie");

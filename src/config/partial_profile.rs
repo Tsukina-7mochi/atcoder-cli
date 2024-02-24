@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::profile::Profile;
+use super::Profile;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartialProfile {

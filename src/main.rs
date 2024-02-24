@@ -2,7 +2,6 @@ mod api;
 mod cli;
 mod commands;
 mod config;
-mod profile;
 mod util;
 
 use std::io::{self, BufWriter};
