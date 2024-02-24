@@ -4,8 +4,8 @@ use std::time::Duration;
 use reqwest::header::HeaderValue;
 use scraper::Html;
 
-use crate::api::api::client;
-use crate::api::url;
+use super::client;
+use super::url;
 
 const COOKIE_NAME_SESSION: &str = "REVEL_SESSION";
 const COOKIE_NAME_RESULT: &str = "REVEL_FLASH";

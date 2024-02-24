@@ -2,8 +2,8 @@ use scraper::Html;
 
 use crate::util::scraper_element_text_content::TextContent;
 
-use super::super::url;
 use super::client;
+use super::url;
 
 mod selectors {
     use once_cell::sync::Lazy;
