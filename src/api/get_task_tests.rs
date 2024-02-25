@@ -1,9 +1,10 @@
+use std::time::Duration;
+
 use scraper::selector::CssLocalName;
 use scraper::{Element, Html};
 
 use crate::util::scraper_element_text_content::TextContent;
 
-use super::client;
 use super::url;
 
 mod selectors {
@@ -25,8 +26,11 @@ pub struct Test {
 
 pub fn get_task_tests(contest_name: &str, task_name: &str) -> Vec<Test> {
     let url = url::contest_task(contest_name, task_name);
-    let res = client::new_client().unwrap().get(url).send().unwrap();
-    let body = res.text().unwrap();
+    let res = ureq::get(&url)
+        .timeout(Duration::from_secs(5))
+        .call()
+        .unwrap();
+    let body = res.into_string().unwrap();
     let document = Html::parse_document(&body);
 
     let io_style_name = CssLocalName::from("io-style");

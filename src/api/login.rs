@@ -1,10 +1,7 @@
-use std::collections::HashMap;
 use std::time::Duration;
 
-use reqwest::header::HeaderValue;
 use scraper::Html;
 
-use super::client;
 use super::url;
 
 const COOKIE_NAME_SESSION: &str = "REVEL_SESSION";
@@ -20,14 +17,22 @@ mod selectors {
 
 fn get_csrf_token_and_session_cookie() -> (String, String) {
     let url = url::login();
-    let res = client::new_client().unwrap().get(url).send().unwrap();
-    let session_cookie = res
-        .cookies()
+    let res = ureq::get(&url)
+        .timeout(Duration::from_secs(5))
+        .call()
+        .unwrap();
+    let cookies: Vec<_> = res
+        .all("set-cookie")
+        .iter()
+        .map(|s| ureq::Cookie::parse(*s).unwrap())
+        .collect();
+    let session_cookie = cookies
+        .iter()
         .find(|c| c.name() == COOKIE_NAME_SESSION)
         .unwrap()
         .value()
         .to_owned();
-    let body = res.text().unwrap();
+    let body = res.into_string().unwrap();
     let document = Html::parse_document(&body);
     let csrf_token = document
         .select(&selectors::INPUT_CSRF_TOKEN)
@@ -47,36 +52,37 @@ fn try_login(
 ) -> Option<String> {
     let url = url::login();
     let cookie_value = &format!("{}={}", COOKIE_NAME_SESSION, session_cookie);
-    let cookie_value = HeaderValue::from_str(&cookie_value).unwrap();
-    let form_data = HashMap::from([
+    let form_data = [
         ("username", username),
         ("password", password),
         ("csrf_token", csrf_token),
-    ]);
+    ];
 
-    let client = reqwest::blocking::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
+    let res = ureq::builder()
+        .redirects(0)
         .timeout(Duration::from_secs(5))
         .build()
+        .post(&url)
+        .set("Cookie", &cookie_value)
+        .send_form(&form_data)
         .unwrap();
-    let res = client
-        .post(url)
-        .header(reqwest::header::COOKIE, cookie_value)
-        .form(&form_data)
-        .send()
-        .unwrap();
-
-    let session_cookie = res
-        .cookies()
+    let cookies: Vec<_> = res
+        .all("set-cookie")
+        .iter()
+        .map(|s| ureq::Cookie::parse(*s).unwrap())
+        .collect();
+    let session_cookie = cookies
+        .iter()
         .find(|c| c.name() == COOKIE_NAME_SESSION)
         .unwrap()
         .value()
         .to_owned();
-    let result_cookie = res
-        .cookies()
+    let result_cookie = cookies
+        .iter()
         .find(|c| c.name() == COOKIE_NAME_RESULT)
-        .unwrap();
-    let result_cookie = result_cookie.value();
+        .unwrap()
+        .value()
+        .to_owned();
 
     if !result_cookie.contains("success") {
         None

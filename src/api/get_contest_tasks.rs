@@ -1,9 +1,9 @@
+use std::time::Duration;
+
 use scraper::Html;
 
-use crate::util::scraper_element_text_content::TextContent;
-
-use super::client;
 use super::url;
+use crate::util::scraper_element_text_content::TextContent;
 
 mod selectors {
     use once_cell::sync::Lazy;
@@ -22,8 +22,11 @@ pub struct Task {
 
 pub fn get_contest_tasks(contest_name: &str) -> Vec<Task> {
     let url = url::contest_tasks(contest_name);
-    let res = client::new_client().unwrap().get(url).send().unwrap();
-    let body = res.text().unwrap();
+    let res = ureq::get(&url)
+        .timeout(Duration::from_secs(5))
+        .call()
+        .unwrap();
+    let body = res.into_string().unwrap();
     let document = Html::parse_document(&body);
 
     let task_names: Vec<_> = document

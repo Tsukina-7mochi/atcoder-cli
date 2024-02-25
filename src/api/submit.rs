@@ -1,6 +1,4 @@
-use std::{collections::HashMap, time::Duration};
-
-use reqwest::header::HeaderValue;
+use std::time::Duration;
 
 use super::url;
 use crate::util::url_encoding;
@@ -31,25 +29,21 @@ pub fn submit(
 
     let url = url::contest_submit(contest_name);
     let cookie_value = &format!("{}={}", COOKIE_NAME_SESSION, session_cookie);
-    let cookie_value = HeaderValue::from_str(&cookie_value).unwrap();
-    let form_data = HashMap::from([
+    let form_data = [
         ("data.TaskScreenName", task_name),
         ("data.LanguageId", &language_id),
         ("sourceCode", source_code),
         ("csrf_token", &csrf_token),
-    ]);
+    ];
 
-    let client = reqwest::blocking::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
+    let res = ureq::builder()
+        .redirects(0)
         .timeout(Duration::from_secs(5))
         .build()
-        .unwrap();
-    let res = client
-        .post(url)
-        .header(reqwest::header::COOKIE, cookie_value)
-        .form(&form_data)
-        .send()
+        .post(&url)
+        .set("Cookie", &cookie_value)
+        .send_form(&form_data)
         .unwrap();
 
-    println!("{:?}", res.text());
+    println!("{:?}", res.into_string());
 }
