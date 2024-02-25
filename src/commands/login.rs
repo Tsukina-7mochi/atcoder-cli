@@ -1,12 +1,5 @@
-use std::io::{self, Write};
-
 pub fn login() {
-    print!("username> ");
-    io::stdout().flush().unwrap();
-    let mut username = String::new();
-    io::stdin().read_line(&mut username).unwrap();
-    let username = username.trim().to_owned();
-
+    let username = rprompt::prompt_reply("username> ").unwrap();
     let password = rpassword::prompt_password("password> ").unwrap();
 
     let session_cookie = crate::api::login::login(&username, &password);
