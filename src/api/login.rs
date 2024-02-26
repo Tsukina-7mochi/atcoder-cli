@@ -1,19 +1,8 @@
 use std::time::Duration;
 
-use scraper::Html;
-
+use super::cookie;
+use super::cookie::ureq::GetCookies;
 use super::url;
-
-const COOKIE_NAME_SESSION: &str = "REVEL_SESSION";
-const COOKIE_NAME_RESULT: &str = "REVEL_FLASH";
-
-mod selectors {
-    use once_cell::sync::Lazy;
-    use scraper::Selector;
-
-    pub const INPUT_CSRF_TOKEN: Lazy<Selector> =
-        Lazy::new(|| Selector::parse("input[name=csrf_token]").unwrap());
-}
 
 fn get_csrf_token_and_session_cookie() -> (String, String) {
     let url = url::login();
@@ -21,25 +10,12 @@ fn get_csrf_token_and_session_cookie() -> (String, String) {
         .timeout(Duration::from_secs(5))
         .call()
         .unwrap();
-    let cookies: Vec<_> = res
-        .all("set-cookie")
-        .iter()
-        .map(|s| ureq::Cookie::parse(*s).unwrap())
-        .collect();
-    let session_cookie = cookies
-        .iter()
-        .find(|c| c.name() == COOKIE_NAME_SESSION)
+    let session_cookie = res
+        .get_cookie(cookie::session::NAME)
         .unwrap()
         .value()
         .to_owned();
-    let body = res.into_string().unwrap();
-    let document = Html::parse_document(&body);
-    let csrf_token = document
-        .select(&selectors::INPUT_CSRF_TOKEN)
-        .next()
-        .map(|el| el.attr("value").unwrap())
-        .unwrap()
-        .to_owned();
+    let csrf_token = cookie::session::get_csrf_token(&session_cookie).unwrap();
 
     (csrf_token, session_cookie)
 }
@@ -51,7 +27,7 @@ fn try_login(
     session_cookie: &str,
 ) -> Option<String> {
     let url = url::login();
-    let cookie_value = &format!("{}={}", COOKIE_NAME_SESSION, session_cookie);
+    let cookie_value = cookie::session::to_cookie_value(session_cookie);
     let form_data = [
         ("username", username),
         ("password", password),
@@ -66,20 +42,14 @@ fn try_login(
         .set("Cookie", &cookie_value)
         .send_form(&form_data)
         .unwrap();
-    let cookies: Vec<_> = res
-        .all("set-cookie")
-        .iter()
-        .map(|s| ureq::Cookie::parse(*s).unwrap())
-        .collect();
+    let cookies = res.get_cookies();
     let session_cookie = cookies
-        .iter()
-        .find(|c| c.name() == COOKIE_NAME_SESSION)
+        .get(cookie::session::NAME)
         .unwrap()
         .value()
         .to_owned();
     let result_cookie = cookies
-        .iter()
-        .find(|c| c.name() == COOKIE_NAME_RESULT)
+        .get(cookie::result::NAME)
         .unwrap()
         .value()
         .to_owned();
