@@ -17,9 +17,6 @@ pub fn submit(
         .ok_or::<SubmitErrorKind>(SessionCookieErrorKind::InvalidSessionCookie.into())?;
     let language_id = language_id.to_string();
 
-    println!("{}", session_cookie);
-    println!("{}", csrf_token);
-
     let url = url::contest_submit(contest_name);
     let cookie_value = cookie::session::to_cookie_value(session_cookie);
     let form_data = [

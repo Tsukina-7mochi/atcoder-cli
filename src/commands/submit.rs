@@ -23,5 +23,7 @@ pub fn submit(
         &session_cookie,
     )?;
 
+    println!("Submitted successfully");
+
     return Ok(());
 }
