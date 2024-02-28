@@ -1,3 +1,4 @@
+pub mod error;
 mod info;
 mod init_task_directory;
 mod login;
@@ -5,6 +6,7 @@ mod run_test;
 mod show_contest_url;
 mod submit;
 
+pub use error::{CommandError, Result};
 pub use info::info;
 pub use init_task_directory::init_task_directory;
 pub use login::login;

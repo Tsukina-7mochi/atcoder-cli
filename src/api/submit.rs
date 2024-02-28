@@ -2,6 +2,9 @@ use std::time::Duration;
 
 use super::cookie;
 use super::url;
+use crate::api;
+use crate::api::error::SessionCookieErrorKind;
+use crate::api::error::SubmitErrorKind;
 
 pub fn submit(
     contest_name: &str,
@@ -9,9 +12,9 @@ pub fn submit(
     language_id: u32,
     source_code: &str,
     session_cookie: &str,
-) {
-    let csrf_token =
-        cookie::session::get_csrf_token(session_cookie).expect("Cannot get CSRF Token");
+) -> api::Result<()> {
+    let csrf_token = cookie::session::get_csrf_token(session_cookie)
+        .ok_or::<SubmitErrorKind>(SessionCookieErrorKind::InvalidSessionCookie.into())?;
     let language_id = language_id.to_string();
 
     println!("{}", session_cookie);
@@ -26,14 +29,13 @@ pub fn submit(
         ("csrf_token", &csrf_token),
     ];
 
-    let res = ureq::builder()
+    ureq::builder()
         .redirects(0)
         .timeout(Duration::from_secs(5))
         .build()
         .post(&url)
         .set("Cookie", &cookie_value)
-        .send_form(&form_data)
-        .unwrap();
+        .send_form(&form_data)?;
 
-    println!("{:?}", res.into_string());
+    Ok(())
 }

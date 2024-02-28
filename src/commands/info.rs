@@ -1,6 +1,6 @@
-use std::io;
 use std::path::Path;
 
+use crate::commands;
 use crate::config::WorkspaceConfig;
 
 pub fn info(
@@ -8,7 +8,7 @@ pub fn info(
     workspace_config_path: Option<&Path>,
     workspace_path: Option<&Path>,
     workspace_config: Option<&WorkspaceConfig>,
-) -> io::Result<()> {
+) -> commands::Result {
     if let Some(path) = global_config_path {
         let path = path.to_string_lossy();
         println!("Global configuration file: {}", path);

@@ -1,11 +1,10 @@
 use std::time::Duration;
 
-use scraper::selector::CssLocalName;
 use scraper::{Element, Html};
 
-use crate::util::scraper_element_text_content::TextContent;
-
 use super::url;
+use crate::api::{self, error::GetTaskTestsErrorKind};
+use crate::util::scraper_element_text_content::TextContent;
 
 mod selectors {
     use once_cell::sync::Lazy;
@@ -14,8 +13,14 @@ mod selectors {
     pub const PARTS: Lazy<Selector> = Lazy::new(|| {
         Selector::parse("div#task-statement > span > span:first-child > div").unwrap()
     });
-
     pub const TESTS_PRE: Lazy<Selector> = Lazy::new(|| Selector::parse("pre").unwrap());
+}
+
+mod class_names {
+    use once_cell::sync::Lazy;
+    use scraper::selector::CssLocalName;
+
+    pub const IO_STYLE: Lazy<CssLocalName> = Lazy::new(|| "io-style".into());
 }
 
 #[derive(Debug, Clone)]
@@ -24,35 +29,32 @@ pub struct Test {
     pub output: String,
 }
 
-pub fn get_task_tests(contest_name: &str, task_name: &str) -> Vec<Test> {
+pub fn get_task_tests(contest_name: &str, task_name: &str) -> api::Result<Vec<Test>> {
     let url = url::contest_task(contest_name, task_name);
-    let res = ureq::get(&url)
-        .timeout(Duration::from_secs(5))
-        .call()
-        .unwrap();
-    let body = res.into_string().unwrap();
+    let res = ureq::get(&url).timeout(Duration::from_secs(5)).call()?;
+    let body = res.into_string()?;
     let document = Html::parse_document(&body);
 
-    let io_style_name = CssLocalName::from("io-style");
     let tests: Vec<_> = document
         .select(&selectors::PARTS)
         .skip_while(|el| {
             !el.has_class(
-                &io_style_name,
+                &class_names::IO_STYLE,
                 scraper::CaseSensitivity::AsciiCaseInsensitive,
             )
         })
         .skip(1)
-        .map(|el| {
-            let content = el
-                .select(&selectors::TESTS_PRE)
+        .filter_map(|el| -> Option<_> {
+            el.select(&selectors::TESTS_PRE)
                 .next()
-                .map(|el| el.text_content());
-            content.unwrap().trim().to_owned()
+                .map(|el| el.text_content())
+                .map(|s| s.trim().to_owned())
         })
         .collect();
 
-    assert!(tests.len() % 2 == 0);
+    if tests.len() % 2 != 0 {
+        return Err(GetTaskTestsErrorKind::IncorrectTestNumber(tests.len()).into());
+    }
 
     let tests: Vec<_> = (0..(tests.len() / 2))
         .map(|i| Test {
@@ -61,5 +63,5 @@ pub fn get_task_tests(contest_name: &str, task_name: &str) -> Vec<Test> {
         })
         .collect();
 
-    tests
+    Ok(tests)
 }

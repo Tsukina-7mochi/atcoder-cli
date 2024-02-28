@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::api;
+use crate::commands;
 use crate::config::Profile;
 
 pub fn submit(
@@ -10,9 +11,9 @@ pub fn submit(
     contest_name: &str,
     task_name: &str,
     session_cookie: &str,
-) {
+) -> commands::Result<()> {
     let filepath = workspace_path.join(&profile.filename);
-    let source_code = fs::read_to_string(&filepath).expect("Cannot red source code");
+    let source_code = fs::read_to_string(&filepath)?;
 
     api::submit::submit(
         contest_name,
@@ -20,5 +21,7 @@ pub fn submit(
         profile.language_id,
         &source_code,
         &session_cookie,
-    )
+    )?;
+
+    return Ok(());
 }

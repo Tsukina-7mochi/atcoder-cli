@@ -3,6 +3,7 @@ use std::time::Duration;
 use scraper::Html;
 
 use super::url;
+use crate::api;
 use crate::util::scraper_element_text_content::TextContent;
 
 mod selectors {
@@ -20,25 +21,19 @@ pub struct Task {
     pub label: String,
 }
 
-pub fn get_contest_tasks(contest_name: &str) -> Vec<Task> {
+pub fn get_contest_tasks(contest_name: &str) -> api::Result<Vec<Task>> {
     let url = url::contest_tasks(contest_name);
-    let res = ureq::get(&url)
-        .timeout(Duration::from_secs(5))
-        .call()
-        .unwrap();
-    let body = res.into_string().unwrap();
+    let res = ureq::get(&url).timeout(Duration::from_secs(5)).call()?;
+    let body = res.into_string()?;
     let document = Html::parse_document(&body);
 
     let task_names: Vec<_> = document
         .select(&selectors::TASK_NAME_ANCHOR)
-        .map(|e| {
-            e.attr("href")
-                .unwrap()
+        .filter_map(|e| -> Option<_> {
+            e.attr("href")?
                 .trim_end_matches('/')
                 .rsplit_once('/')
-                .unwrap()
-                .1
-                .to_owned()
+                .map(|t| t.1.to_owned())
         })
         .collect();
     let task_labels: Vec<_> = document
@@ -52,5 +47,5 @@ pub fn get_contest_tasks(contest_name: &str) -> Vec<Task> {
         .map(|(name, label)| Task { name, label })
         .collect();
 
-    tasks
+    Ok(tasks)
 }

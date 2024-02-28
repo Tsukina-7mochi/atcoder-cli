@@ -55,14 +55,26 @@ pub mod ureq {
         fn get_cookie(&self, name: &str) -> Option<Cookie> {
             self.all("set-cookie")
                 .iter()
-                .map(|s| ureq::Cookie::parse(*s).unwrap())
+                .map(|s| ureq::Cookie::parse(*s))
+                .inspect(|r| {
+                    if r.is_err() {
+                        eprintln!("Failed to prase cookie, ignore it.");
+                    }
+                })
+                .filter_map(|r| r.ok())
                 .find(|c| c.name() == name)
         }
 
         fn get_cookies(&self) -> Cookies {
             self.all("set-cookie")
                 .iter()
-                .map(|s| ureq::Cookie::parse(*s).unwrap())
+                .map(|s| ureq::Cookie::parse(*s))
+                .inspect(|r| {
+                    if r.is_err() {
+                        eprintln!("Failed to prase cookie, ignore it.");
+                    }
+                })
+                .filter_map(|r| r.ok())
                 .collect::<Vec<_>>()
                 .into()
         }

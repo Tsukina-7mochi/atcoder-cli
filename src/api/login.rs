@@ -3,21 +3,22 @@ use std::time::Duration;
 use super::cookie;
 use super::cookie::ureq::GetCookies;
 use super::url;
+use crate::api;
+use crate::api::error::{LoginErrorKind, SessionCookieErrorKind};
+use crate::util::url_encoding;
 
-fn get_csrf_token_and_session_cookie() -> (String, String) {
+fn get_csrf_token_and_session_cookie() -> api::Result<(String, String)> {
     let url = url::login();
-    let res = ureq::get(&url)
-        .timeout(Duration::from_secs(5))
-        .call()
-        .unwrap();
+    let res = ureq::get(&url).timeout(Duration::from_secs(5)).call()?;
     let session_cookie = res
         .get_cookie(cookie::session::NAME)
-        .unwrap()
+        .ok_or::<LoginErrorKind>(SessionCookieErrorKind::NoSessionCookie.into())?
         .value()
         .to_owned();
-    let csrf_token = cookie::session::get_csrf_token(&session_cookie).unwrap();
+    let csrf_token = cookie::session::get_csrf_token(&session_cookie)
+        .ok_or::<LoginErrorKind>(SessionCookieErrorKind::InvalidSessionCookie.into())?;
 
-    (csrf_token, session_cookie)
+    Ok((csrf_token, session_cookie))
 }
 
 fn try_login(
@@ -25,7 +26,7 @@ fn try_login(
     password: &str,
     csrf_token: &str,
     session_cookie: &str,
-) -> Option<String> {
+) -> api::Result<String> {
     let url = url::login();
     let cookie_value = cookie::session::to_cookie_value(session_cookie);
     let form_data = [
@@ -40,28 +41,30 @@ fn try_login(
         .build()
         .post(&url)
         .set("Cookie", &cookie_value)
-        .send_form(&form_data)
-        .unwrap();
+        .send_form(&form_data)?;
     let cookies = res.get_cookies();
     let session_cookie = cookies
         .get(cookie::session::NAME)
-        .unwrap()
+        .ok_or::<LoginErrorKind>(SessionCookieErrorKind::NoSessionCookie.into())?
         .value()
         .to_owned();
     let result_cookie = cookies
         .get(cookie::result::NAME)
-        .unwrap()
+        .ok_or(LoginErrorKind::NoResultCookie)?
         .value()
         .to_owned();
 
     if !result_cookie.contains("success") {
-        None
+        let result = url_encoding::encode(result_cookie);
+        Err(LoginErrorKind::LoginFailed(result).into())
     } else {
-        Some(session_cookie)
+        Ok(session_cookie)
     }
 }
 
-pub fn login(username: &str, password: &str) -> Option<String> {
-    let (csrf_token, session_cookie) = get_csrf_token_and_session_cookie();
-    try_login(username, password, &csrf_token, &session_cookie)
+pub fn login(username: &str, password: &str) -> api::Result<String> {
+    let (csrf_token, session_cookie) = get_csrf_token_and_session_cookie()?;
+    let session_cookie = try_login(username, password, &csrf_token, &session_cookie)?;
+
+    Ok(session_cookie)
 }

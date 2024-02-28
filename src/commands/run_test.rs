@@ -4,10 +4,23 @@ use std::path::Path;
 use subprocess::{Exec, Redirection};
 
 use crate::api;
+use crate::commands;
+use crate::commands::error::RunTestErrorKind;
 
 enum Tests {
     Manual(String),
     Auto(Vec<api::get_task_tests::Test>),
+}
+
+struct TestResult {
+    index: usize,
+    kind: TestResultKind,
+}
+
+enum TestResultKind {
+    Success,
+    Failure { actual: String, expected: String },
+    Error(RunTestErrorKind),
 }
 
 pub fn run_test(
@@ -15,24 +28,26 @@ pub fn run_test(
     build_command: Option<&str>,
     run_command: &str,
     contest_task_name: Option<(&str, &str)>,
-) -> () {
+) -> commands::Result {
     let tests: Tests = if let Some((contest_name, task_name)) = contest_task_name {
         // fetch remote
-        let tests = api::get_task_tests::get_task_tests(contest_name, task_name);
+        let tests = api::get_task_tests::get_task_tests(contest_name, task_name)?;
         Tests::Auto(tests)
     } else {
         // read from stdin
         let mut buffer = String::new();
-        io::stdin().read_to_string(&mut buffer).unwrap();
+        io::stdin().read_to_string(&mut buffer)?;
         Tests::Manual(buffer)
     };
 
     if let Some(build_command) = build_command {
         println!("Building...");
-        let result = Exec::shell(build_command).cwd(cwd).capture().unwrap();
+        let result = Exec::shell(build_command)
+            .cwd(cwd)
+            .capture()
+            .map_err(|err| RunTestErrorKind::BuildCommandFailed(err.into()))?;
         if !result.success() {
-            println!("Build failed: {:?}", result.exit_status);
-            return;
+            return Err(RunTestErrorKind::BuildCommandFailed(result.exit_status.into()).into());
         }
     }
 
@@ -43,55 +58,80 @@ pub fn run_test(
                 .stdin(input.as_str())
                 .stdout(Redirection::Pipe)
                 .capture()
-                .unwrap();
+                .map_err(|err| RunTestErrorKind::RunCommandFailed(err.into()))?;
             if !result.success() {
-                println!("Process failed: {:?}", result.exit_status);
-                return;
+                return Err(RunTestErrorKind::RunCommandFailed(result.exit_status.into()).into());
             }
             println!("{}", result.stdout_str());
         }
         Tests::Auto(tests) => {
             // TODO: implement parallel tests
-            let mut results: Vec<(usize, bool)> = vec![];
-            for (i, test) in tests.iter().enumerate() {
-                println!("Running test {}", i + 1);
+            let mut results: Vec<TestResult> = vec![];
+            for (index, test) in tests.iter().enumerate() {
+                println!("Running test {}", index + 1);
 
                 let result = Exec::shell(run_command)
                     .cwd(cwd)
                     .stdin(test.input.as_str())
                     .stdout(Redirection::Pipe)
                     .capture()
-                    .unwrap();
-                if !result.success() {
-                    println!("Process failed: {:?}", result.exit_status);
-                    results.push((i, false));
-                    continue;
+                    .map_err(|err| RunTestErrorKind::RunCommandFailed(err.into()));
+
+                let kind = match result {
+                    Err(err) => TestResultKind::Error(err),
+                    Ok(result) => {
+                        if !result.success() {
+                            TestResultKind::Error(RunTestErrorKind::RunCommandFailed(
+                                result.exit_status.into(),
+                            ))
+                        } else {
+                            let actual = result.stdout_str();
+                            let actual = actual.trim().to_owned();
+                            let expected = test.output.trim().to_owned();
+                            if actual == expected {
+                                TestResultKind::Success
+                            } else {
+                                TestResultKind::Failure { actual, expected }
+                            }
+                        }
+                    }
+                };
+
+                match kind {
+                    TestResultKind::Success => println!("Test {}..Success", index + 1),
+                    TestResultKind::Failure {
+                        ref actual,
+                        ref expected,
+                    } => {
+                        println!("Test {}..Failure", index + 1);
+                        if actual.contains('\n') || expected.contains('\n') {
+                            println!("Actual:\n{}\n\nExpected:\n{}\n", actual, expected);
+                        } else if actual.len() > 10 || expected.len() > 10 {
+                            println!("Actual  : {}\nExpected: {}", actual, expected);
+                        } else {
+                            println!("Actual: {}, Expected: {}", actual, expected);
+                        }
+                    }
+                    TestResultKind::Error(ref err) => {
+                        println!("Test {}..Error: {}", index + 1, &err);
+                    }
                 }
 
-                let actual = result.stdout_str();
-                let actual = actual.trim();
-                let expected = test.output.trim();
-                if actual == expected {
-                    println!("Test {}..Success", i + 1);
-                    results.push((i, true));
-                } else {
-                    println!("Test {}..Failure", i + 1);
-                    if actual.contains('\n') || expected.contains('\n') {
-                        println!("Actual:\n{}\n\nExpected:\n{}\n", actual, expected);
-                    } else if actual.len() > 10 || expected.len() > 10 {
-                        println!("Actual  : {}\nExpected: {}", actual, expected);
-                    } else {
-                        println!("Actual: {}, Expected: {}", actual, expected);
-                    }
-                    results.push((i, false));
-                }
+                results.push(TestResult { index, kind });
             }
 
             println!("== Test results ==");
-            for (i, succeeded) in results {
-                let res = if succeeded { "Success" } else { "Failure" };
-                println!("Test {}..{}", i + 1, res);
+            results.sort_by_key(|r| r.index);
+            for r in results {
+                let res = match r.kind {
+                    TestResultKind::Success => "Success",
+                    TestResultKind::Failure { .. } => "Failure",
+                    TestResultKind::Error(_) => "Error",
+                };
+                println!("Test {}..{}", r.index + 1, res);
             }
         }
     }
+
+    Ok(())
 }
