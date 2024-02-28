@@ -15,7 +15,43 @@ pub struct GetConfigsResult {
     pub workspace_config: Option<WorkspaceConfig>,
     pub global_config_path: Option<PathBuf>,
     pub global_config: Option<GlobalConfig>,
-    pub session_cookie: Option<String>,
+    pub session_cookie: Result<String, SessionCookieError>,
+}
+
+#[derive(Debug)]
+pub enum SessionCookieError {
+    VarError(env::VarError),
+    KeyringError(keyring::Error),
+}
+
+impl std::fmt::Display for SessionCookieError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SessionCookieError::VarError(err) => write!(f, "{}", err),
+            SessionCookieError::KeyringError(err) => write!(f, "{}", err),
+        }
+    }
+}
+
+impl std::error::Error for SessionCookieError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            SessionCookieError::VarError(err) => Some(err),
+            SessionCookieError::KeyringError(err) => Some(err),
+        }
+    }
+}
+
+impl From<env::VarError> for SessionCookieError {
+    fn from(e: env::VarError) -> Self {
+        SessionCookieError::VarError(e)
+    }
+}
+
+impl From<keyring::Error> for SessionCookieError {
+    fn from(e: keyring::Error) -> Self {
+        SessionCookieError::KeyringError(e)
+    }
 }
 
 impl GetConfigsResult {
@@ -41,7 +77,7 @@ impl GetConfigsResult {
     }
 }
 
-pub fn get_config() -> GetConfigsResult {
+pub fn get_config(env_session: bool) -> GetConfigsResult {
     let cwd = env::current_dir().ok();
 
     let workspace_config_path = cwd
@@ -61,7 +97,11 @@ pub fn get_config() -> GetConfigsResult {
         .as_ref()
         .map(|path| fs::read_to_string(path).unwrap())
         .map(|content| serde_yaml::from_str::<GlobalConfig>(&content).unwrap());
-    let session_cookie = env::var("ATCODER_SESSION").ok();
+    let session_cookie: Result<String, SessionCookieError> = if env_session {
+        super::session_cookie::env::get().map_err(|e| e.into())
+    } else {
+        super::session_cookie::keyring::get().map_err(|e| e.into())
+    };
 
     return GetConfigsResult {
         cwd,

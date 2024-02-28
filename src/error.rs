@@ -1,6 +1,6 @@
 use std::{error, fmt};
 
-use crate::commands::CommandError;
+use crate::{commands::CommandError, config};
 
 pub type Result<T = ()> = std::result::Result<T, CLIError>;
 
@@ -45,7 +45,7 @@ pub enum ConfigErrorKind {
     CWDNotProvided,
     WorkspacePathNotProvided,
     WorkspaceConfigNotProvided,
-    SessionCookieNotProvided,
+    SessionCookieNotProvided(config::SessionCookieError),
     ProfileNotProvided,
     ContestNameNotProvided,
     TaskNameNotProvided,
@@ -57,7 +57,7 @@ impl fmt::Display for ConfigErrorKind {
             Self::CWDNotProvided => write!(f, "Current working directory not provided"),
             Self::WorkspacePathNotProvided => write!(f, "Workspace path not provided"),
             Self::WorkspaceConfigNotProvided => write!(f, "Workspace config not provided"),
-            Self::SessionCookieNotProvided => write!(f, "Session cookie not provided"),
+            Self::SessionCookieNotProvided(err) => write!(f, "{}", err),
             Self::ProfileNotProvided => write!(f, "Profile not provided"),
             Self::ContestNameNotProvided => write!(f, "Contest name not provided"),
             Self::TaskNameNotProvided => write!(f, "Task name not provided"),

@@ -11,6 +11,7 @@ pub type Result<T = ()> = std::result::Result<T, CommandError>;
 pub enum CommandError {
     APIError(APIError),
     IOError(io::Error),
+    KeyringError(keyring::Error),
     InitTaskDirectoryError(InitTaskDirectoryErrorKind),
     RunTestError(RunTestErrorKind),
 }
@@ -20,6 +21,7 @@ impl fmt::Display for CommandError {
         match self {
             Self::APIError(err) => write!(f, "{}", err),
             Self::IOError(err) => write!(f, "{}", err),
+            Self::KeyringError(err) => write!(f, "{}", err),
             Self::InitTaskDirectoryError(err) => write!(f, "{}", err),
             Self::RunTestError(err) => write!(f, "{}", err),
         }
@@ -31,6 +33,7 @@ impl error::Error for CommandError {
         match self {
             Self::APIError(err) => Some(err),
             Self::IOError(err) => Some(err),
+            Self::KeyringError(err) => Some(err),
             Self::InitTaskDirectoryError(err) => err.source(),
             Self::RunTestError(err) => err.source(),
         }
@@ -46,6 +49,12 @@ impl From<APIError> for CommandError {
 impl From<io::Error> for CommandError {
     fn from(err: io::Error) -> Self {
         Self::IOError(err)
+    }
+}
+
+impl From<keyring::Error> for CommandError {
+    fn from(err: keyring::Error) -> Self {
+        Self::KeyringError(err)
     }
 }
 

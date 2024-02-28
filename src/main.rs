@@ -45,7 +45,7 @@ fn run() -> error::Result {
     let out = io::stdout();
     let mut out = BufWriter::new(out.lock());
     let cli = cli::CLI::parse();
-    let config = config::get_config();
+    let config = config::get_config(cli.env_session);
 
     match cli.command {
         cli::Commands::Info => commands::info(
@@ -86,7 +86,7 @@ fn run() -> error::Result {
         cli::Commands::Test { manual } => {
             run_test(&config, manual, false)?;
         }
-        cli::Commands::Login => commands::login()?,
+        cli::Commands::Login => commands::login(cli.env_session)?,
         cli::Commands::Submit => {
             let workspace_path = config
                 .workspace_path
@@ -107,15 +107,14 @@ fn run() -> error::Result {
                 .ok_or(error::ConfigErrorKind::TaskNameNotProvided)?;
             let session_cookie = config
                 .session_cookie
-                .as_ref()
-                .ok_or(error::ConfigErrorKind::SessionCookieNotProvided)?;
+                .map_err(|err| error::ConfigErrorKind::SessionCookieNotProvided(err))?;
 
             commands::submit(
                 &workspace_path,
                 &profile,
                 contest_name,
                 task_name,
-                session_cookie,
+                &session_cookie,
             )?;
         }
     }
