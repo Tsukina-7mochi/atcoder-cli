@@ -6,7 +6,7 @@ pub mod session {
     pub fn get_csrf_token(session_cookie: &str) -> Option<String> {
         for value in session_cookie.split("%00") {
             if value.starts_with("csrf_token") {
-                return Some(url_encoding::encode(value[13..].to_owned()));
+                return Some(url_encoding::decode(&value[13..].to_owned()));
             }
         }
         None

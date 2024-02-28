@@ -1,4 +1,4 @@
-pub fn encode(value: String) -> String {
+pub fn decode(value: &str) -> String {
     value
         .replace('+', " ")
         .replace("%20", " ")

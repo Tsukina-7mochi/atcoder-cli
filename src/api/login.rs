@@ -55,7 +55,7 @@ fn try_login(
         .to_owned();
 
     if !result_cookie.contains("success") {
-        let result = url_encoding::encode(result_cookie);
+        let result = url_encoding::decode(&result_cookie);
         Err(LoginErrorKind::LoginFailed(result).into())
     } else {
         Ok(session_cookie)
